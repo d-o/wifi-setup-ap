@@ -1,0 +1,13 @@
+#
+# Is a localhost only listening socket for the websocket
+# server attached to the http server. Stopped by the corresponding
+# server service.
+#
+
+[Unit]
+Description=Charger configuration socket
+After=cfg-http.service
+BindsTo=cfg-http.service
+
+[Socket]
+ListenStream=127.0.0.1:9999

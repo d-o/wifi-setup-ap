@@ -1,0 +1,51 @@
+#!/bin/sh
+
+#This script sets the ip addresses for the charger
+#dns responder using dnsmasq.
+#Usage -
+# Arg 1 - used as dnsmasq config file to modify
+#   default - /etc/cfg-wifi-ap/dnsmasq.conf
+# Arg 2 - where to store modified copy
+#   default - /tmp/dnsmasq.mod.conf
+# Arg 3 - Interface name to get address for
+#   default wlan0
+# Exit 0 - Done OK
+# Exit 1 - Files don't exist or wasn't writable in case of conf file
+# Exit 2 - Couldn't copy file
+# Exit 3 - Interface IP v4 address not found
+
+#Exit on any errors
+set -e
+
+# Get file to modify from arg 1, or default
+DNSMASQ_CONF_FILE=${1:-/etc/cfg-wifi-ap/dnsmasq.conf}
+# Get the destination of modified file from 2
+DNSMASQ_CONF_FILE_MODIFIED=${2:-/tmp/dnsmasq.mod.conf}
+# Get the interface to use from 3
+IPvX_IFACE=${3:-wlan0}
+
+if [ ! -f "$DNSMASQ_CONF_FILE" ]; then
+    echo "Problem with $DNSMASQ_CONF_FILE (exists)" >&2
+    exit 1
+fi
+
+if ! cp $DNSMASQ_CONF_FILE $DNSMASQ_CONF_FILE_MODIFIED > /dev/null; then
+    echo "Copy $DNSMASQ_CONF_FILE to $DNSMASQ_CONF_FILE_MODIFIED failed" >&2
+    exit 2
+fi
+
+if ! IPv4_ADDR=$(ip -o -4 a show $IPvX_IFACE | grep -Eo 'inet\s[^/]+' | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'); then
+    echo "IPv4 address for $IPvX_IFACE not found" >&2
+    exit 3
+fi
+
+echo 'address=/#/'$IPv4_ADDR >> $DNSMASQ_CONF_FILE_MODIFIED
+
+# If we get an IPv6 address, add it as well
+if IPv6_ADDR=$(ip -o -6 a show $IPvX_IFACE | grep -Eo 'inet6\s[^/]+' | grep -Eo '([a-f0-9:]+:+)+[a-f0-9]+'); then
+    echo "IPv6 address for $IPvX_IFACE found" >&2
+    echo 'address=/#/'$IPv6_ADDR >> $DNSMASQ_CONF_FILE_MODIFIED
+fi
+
+#Done, no errors!
+exit 0

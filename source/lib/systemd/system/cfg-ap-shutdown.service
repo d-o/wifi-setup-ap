@@ -1,0 +1,11 @@
+# This service file is designed to be triggered by a matching
+# timer unit. It will shutdown the access point target.
+# *** It doesn't restart the monitor service...
+
+[Unit]
+Description=Shutdown access point target
+Conflicts=cfg-ap.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/echo "AP target timed out"

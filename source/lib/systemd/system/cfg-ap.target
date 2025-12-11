@@ -1,0 +1,11 @@
+# Designed to be started on failure of systemd-networkd-wait-online.service
+# So conficts with it ... when online service is restarted, this target is shutdown.
+[Unit]
+Description=Target to group services that open an AP to provision WiFi.
+Conflicts=systemd-networkd-wait-online.service
+# Ordering is important for restart logic, start After = shutdown Before
+After=systemd-networkd-wait-online.service
+
+#This target starts these services.
+Wants=cfg-wlanap.service cfg-dns.service cfg-http.service cfg-ap-shutdown.timer
+AllowIsolate=false
