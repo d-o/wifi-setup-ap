@@ -1,0 +1,42 @@
+#!/bin/bash
+
+#This script sets the access point name for the charger
+#using hostapd.
+#Usage -
+# Arg 1 - used as hostapd config file to modify
+#   default - /etc/cfg-wifi-ap/hostapd.conf
+# Arg 2 - where to store modified copy
+#   default - /tmp/hostapd.mod.conf
+# Exit 0 - Done OK
+# Exit 1 - File didn't contain an "ssid=" field to modify
+# Exit 2 - Couldn't copy file
+
+#Exit on any errors
+set -e
+
+# Get file to modify from arg 1, or default
+HOSTAPD_CONF_FILE=${1:-/etc/cfg-wifi-ap/hostapd.conf}
+# Get the destination of modified file from 2
+HOSTAPD_CONF_FILE_MODIFIED=${2:-/tmp/hostapd.mod.conf}
+
+#Regex that is used by grep and sed to find the ssid field in conf file
+SSID_SEARCH_PATTERN="^\(ssid=\).*"
+
+if  ! grep -e $SSID_SEARCH_PATTERN $HOSTAPD_CONF_FILE > /dev/null; then
+    echo "$HOSTAPD_CONF_FILE does not contain \"ssid=\" field" >&2
+    exit 1
+fi
+
+if ! cp $HOSTAPD_CONF_FILE $HOSTAPD_CONF_FILE_MODIFIED > /dev/null; then
+    echo "Copy $$HOSTAPD_CONF_FILE to $HOSTAPD_CONF_FILE_MODIFIED failed" >&2
+    exit 2
+fi
+
+#Make a string to use as the AP name
+AP_NAME="Setup AP for :"$( hostname )
+
+#Set the new access point name in the config file selected
+sed -i "s/$SSID_SEARCH_PATTERN/\1\"$AP_NAME\"/" $HOSTAPD_CONF_FILE_MODIFIED
+
+#Done, no errors!
+exit 0

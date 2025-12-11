@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+
+from socketserver import TCPServer, StreamRequestHandler
+import socket
+import logging
+import subprocess
+import urllib.parse
+import re
+from shutil import copy as cp
+from hashlib import pbkdf2_hmac as psk_hash
+
+class Handler(StreamRequestHandler):
+    def handle(self):
+        while True:
+            self.data = self.rfile.readline() #will return empty bytes on EOF
+            if not self.data:
+                logging.info('Socket closed, exit and restart systemd-networkd-wait-online.service')
+                subprocess.run(["/bin/systemctl", "start", "systemd-networkd-wait-online.service", "--no-block"])
+                break
+            exec_cmds = self.data.strip().decode().split()
+            logging.debug("Commands :" + str(exec_cmds))
+            if len(exec_cmds) == 1:
+                logging.debug("exec_cmds == 1")
+                if exec_cmds[0] == "return":
+                    logging.info("Closing and finishing ... save new station settings")
+                    cp("/tmp/ap_wpa_setup", "/etc/wpa_supplicant/wpa_supplicant-wlan0.conf")
+                    logging.info("Restart systemd-networkd-wait-online.service")
+                    subprocess.run(["/bin/systemctl", "start", "systemd-networkd-wait-online.service", "--no-block"])
+                    break
+            logging.debug("Resetting the AP timeout .. user input should keep it alive")
+            subprocess.run(["/bin/systemctl", "restart", "cfg-ap-shutdown.timer"])
+            if exec_cmds[0] == 'set-wifi-network':
+                ssid = urllib.parse.unquote(exec_cmds[1]).encode()
+                psk = urllib.parse.unquote(exec_cmds[2]).encode()
+                logging.info(f'Setting wifi with ssid: "{ssid.decode()}" psk: "{psk.decode()}"')
+                if len(psk) < 8 or len(psk) > 63: # PSK needs to be between 8 and 63
+                    logging.warning(f'PSK wrong length at {len(psk)} (8-63)')
+                    self.wfile.write((f'1\nPSK wrong length at {len(psk)} (8-63)\n').encode())
+                else: # We have a psk between 8 and 63
+                    psk_hashed = psk_hash('sha1', psk, ssid, 4096, 256//8)
+                    # Save the desired network connection block
+                    to_wlan_conf = "ctrl_interface=/var/run/wpa_supplicant\nctrl_interface_group=0\n"
+                    to_wlan_conf += "network={\n\t"+f'# {ssid.decode()}\n\tssid={ssid.hex()}\n\t# {psk.decode()}\n\tpsk={psk_hashed.hex()}\n'+'}\n'
+                    # Add a fall back if we want to debug/test
+                    to_wlan_conf += "network={\n\t"+f'ssid="connect_device"\n\tpsk="connect_device"\n\tpriority=-999\n'+'}\n'
+                    logging.debug(f'Add to wlan0 : "{to_wlan_conf}"')
+                    with open('/tmp/ap_wpa_setup', 'wb') as conf:
+                        conf.write(to_wlan_conf.encode())
+                        conf.close()
+                    # Send a no error up
+                    self.wfile.write(f"0\n".encode())
+            else:
+                exec_bin = ['/usr/sbin/wpa_cli']
+                logging.info('We are going to exec : ' + ' '.join([*exec_bin, *exec_cmds]))
+                result = subprocess.run([*exec_bin, *exec_cmds], capture_output=True)
+                logging.debug('Run result : ' + result.stdout.decode())
+                output = []
+                # Matches \xhh not \\xhh with hh saved
+                gethex = re.compile(r"(?<!\\)\\x([0-9A-Fa-f]{2})".encode())
+                for line in result.stdout.splitlines():
+                    # The byte string from wpa_cli needs \xHH replaced with hex, use re
+                    line = gethex.sub(lambda m: bytes.fromhex(m.group(1).decode()), line)
+                    # Remove \\
+                    line = line.replace(b'\\\\', b'\\')
+                    output.append(urllib.parse.quote(line.decode()))
+                self.wfile.write(('\n'.join(output)+'\n').encode())
+
+class Server(TCPServer):
+
+    # The constant would be better initialized by a systemd module
+    SYSTEMD_FIRST_SOCKET_FD = 3
+
+    def __init__(self, server_address, handler_cls):
+        # Invoke base but omit bind/listen steps (performed by systemd activation!)
+        TCPServer.__init__(
+            self, server_address, handler_cls, bind_and_activate=False)
+        # Override socket
+        self.socket = socket.fromfd(
+            self.SYSTEMD_FIRST_SOCKET_FD, self.address_family, self.socket_type)
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    HOST, PORT = "localhost", 9999 # not really needed here
+    server = Server((HOST, PORT), Handler)
+    logging.info("Starting server")
+    server.serve_forever()
+    logging.info("Finshing server")
+    exit(0)

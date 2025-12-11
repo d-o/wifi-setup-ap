@@ -1,0 +1,23 @@
+#
+# Starts an access point once the monitor is started.
+#
+
+[Unit]
+Description=Hostapd used as transient AP for network config
+PartOf=cfg-ap.target
+After=cfg-ap.target
+
+[Service]
+PIDFile=/run/wifi-cfg-hostapd.pid
+# If someone has entered the wrong password before, it will
+# keep trying and failing (stopping the AP) unless you do this
+ExecStartPre=-wpa_cli remove_network all
+#Set the access point name in the conf file
+ExecStartPre=/usr/sbin/set-wifi-cfg-ap-name
+#Start the AP....
+ExecStart=/usr/sbin/hostapd /tmp/hostapd.mod.conf -P /run/wifi-cfg-hostapd.pid
+
+#On stop make sure we reconfigure again, will reload config
+ExecStopPost=-wpa_cli reconfigure
+# Massive #TODO make this whole suite templated ...
+ExecStopPost=networkctl reconfigure wlan0

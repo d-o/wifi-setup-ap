@@ -1,0 +1,9 @@
+# This timer file triggers the matching service that shuts down
+# the access point target.
+
+[Unit]
+Description=Shutdown access point timer
+
+[Timer]
+OnActiveSec=350s
+RemainAfterElapse=false

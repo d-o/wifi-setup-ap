@@ -1,0 +1,17 @@
+[Unit]
+Description=DNS responder for transient AP
+PartOf=cfg-ap.target
+After=cfg-ap.target cfg-wlanap.service
+
+[Service]
+Type=forking
+PIDFile=/run/dnsmasq.pid
+#The AP set the interface up, we need to wait for it to get an address
+#It isn't good enough to just order on the service.
+ExecStartPre=/lib/systemd/systemd-networkd-wait-online --interface=wlan0
+#Now we can continue on
+ExecStartPre=/usr/sbin/set-dns-cfg-address
+ExecStartPre=/usr/bin/dnsmasq -C /tmp/dnsmasq.mod.conf --test
+ExecStart=/usr/bin/dnsmasq -x /run/dnsmasq.pid -C /tmp/dnsmasq.mod.conf --local-service
+ExecStop=/bin/kill $MAINPID
+ExecReload=/bin/kill -HUP $MAINPID

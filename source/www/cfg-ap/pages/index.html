@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <title>Wi-Fi Setup</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="./assets/css/index.css">
+    <link rel="icon" href="./assets/favicon-32x32.png" type="image/png">
+  </head>
+
+  <body>
+    <script type="text/javascript" src="./assets/js/brand.js"></script>
+    <script type="text/javascript" src="./index.js" defer></script>
+    <div class="background">
+      <div class="navbar">
+        <div class="logo">
+          <img src="./assets/images/logo.png" alt="logo" class="logo" style="width: 100%;">
+        </div>
+        <h3>Wi-Fi Setup</h3>
+      </div>
+      <div class="nav-container">
+        <div>
+          <div id="nav-progress-track" class="nav-progress-track"></div>
+          <div class="nav-step-container">
+            <div id="step-1" class="nav-step nav-active-step">
+              <p>Scan Networks</p>
+              <p>1</p>
+            </div>
+            <div id="step-2" class="nav-step">
+              <p>Select Network</p>
+              <p>2</p>
+            </div>
+            <div id="step-3" class="nav-step">
+              <p>Setup Connection</p>
+              <p>3</p>
+            </div>
+            <div id="step-4" class="nav-step">
+              <p>Connect</p>
+              <p>4</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <section class="card wifi-setup-container">
+        <div class="tab-container">
+          <div id="begin-setup-tab">
+            <h3 style="margin-top: 0;">Wi-Fi Setup</h3>
+            <p>
+              Welcome to the
+              <span class="whitelabel"></span>
+              Wi-Fi setup page. We'll go step by step to help set up your Wi-Fi connection.
+            </p>
+            <p>Press the button below to begin scanning for nearby Wi-Fi networks.</p>
+            <button class="btn btn-primary" id="scan-networks-button">
+              <span style="display: flex; align-items: center;">
+                <span id="scan-networks-loading-spinner" class="loading-spinner hidden"></span>Scan Networks
+              </span>
+            </button>
+            <p id="list-networks-error" class="hidden" style="color: rgb(221, 32, 32);"></p>
+          </div>
+          <div class="hidden" id="network-list-tab">
+            <h3 style="margin-top: 0;">Select your Wi-Fi Network</h3>
+            <button class="btn btn-primary" id="rescan-networks-button">
+              <span style="display: flex; align-items: center;">
+                <span id="scan-networks-loading-spinner" class="loading-spinner hidden"></span>Rescan Networks
+              </span>
+            </button>
+            <div id="wifi-networks" class="network-container"></div>
+          </div>
+          <div class="hidden" id="set-network-credentials-tab">
+            <h3 style="margin-top: 0;">Setup Wi-Fi Network</h3>
+            <div class="wifi-setup-form">
+              <p class="form-label">Wi-Fi Network Name (SSID)</p>
+              <p id="wifi-ssid-selected">Selected</p>
+              <label class="form-label">Home Wi-Fi Password</label>
+              <br>
+              <input class="form-input" type="text" id="wifi-password-input" placeholder="Wi-Fi Password">
+              <div class="button-flex">
+                <button class="btn btn-primary" type="submit" id="wifi-set-credentials-button">
+                  <span style="display: flex; align-items: center;">
+                    Set Credentials
+                  </span>
+                </button>
+                <button class="btn btn-secondary" id="go-back-to-select-button">
+                  Go Back
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="hidden" id="connect-network-tab">
+            <h3 style="margin-top: 0;">Next Steps</h3>
+            <p>When you press the 'Connect' button below, this portal will close.</p>
+            <div class="hidden" id="device-image-container" style="display: flex; align-items: center; justify-content: center;">
+              <img id="device-image" src="./assets/images/" alt="the-device-being-provisioned" style="width: 200px;">
+            </div>
+            <p>
+              <b>How do I know the device is connected?</b>
+              <br>
+              You should be able to ping your device, try <pre>ping you_hostname.local</hostname></pre>
+            </p>
+            <p>
+              If the network connection fails, the AP will be restarted. You can connect and try entering WiFi credentials again.
+              <span id="next-steps-whitelabel"></span>
+            </p>
+            <div class="button-flex">
+              <button class="btn btn-primary" type="submit" id="wifi-connect-submit-button">
+                <span style="display: flex; align-items: center;">
+                  <span id="wifi-connect-loading-spinner" class="loading-spinner hidden"></span>Connect
+                </span>
+              </button>
+              <button class="btn btn-secondary" id="go-back-to-credentials-button">
+                Go Back
+              </button>
+            </div>
+            <div class="hidden" id="redirect-text">
+              <p>If you don't get redirected, <a href="" id="brand-redirect">click here</a>.</p>
+            </div>
+          </div>
+          <div class="hidden" id="no-websocket-tab">
+            <p style="margin-top: 0;">Failed to initialise the Wi-Fi setup flow. Please try these steps to continue:</p>
+              <ol>
+                <li>Close this window and <b>stay connected</b> to the device's Wi-Fi network</li>
+                <li>
+                  <span class="list-item-flex">
+                    <span>Go to your browser and navigate to <b id="wifi-setup-link">Replace me in branding</b></span>
+                    <button class="btn btn-small btn-secondary" id="copy-link-btn" onclick="copyToClipboard('wifi-setup-link')">
+                      <span style="display: flex; align-items: center;">
+                        Copy Link
+                      </span>
+                    </button>
+                  </span>
+                </li>
+                <li>Follow steps to connect your device to your Wi-Fi network</li>
+              </ol>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+
+</html>

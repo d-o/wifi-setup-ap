@@ -1,0 +1,17 @@
+#
+# Starts a http server once the monitor is started.
+#
+
+[Unit]
+Description=HTTP server for transient network config AP
+PartOf=cfg-ap.target
+Wants=cfg-wssvr.socket
+After=cfg-ap.target cfg-dns.service
+
+[Service]
+Type=simple
+PIDFile=/run/wifi-cfg-lighttpd.pid
+ExecStartPre=/usr/sbin/lighttpd -tt -f /etc/cfg-wifi-ap/lighttpd.conf
+ExecStart=/usr/sbin/lighttpd -D -f /etc/cfg-wifi-ap/lighttpd.conf
+# Lighttpd does a graceful shutdown on SIGINT
+KillSignal=SIGINT

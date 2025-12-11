@@ -1,0 +1,13 @@
+#
+# Starts a websocket listener to do the configuration.
+# Started by the socket unit and dependent on the http service.
+#
+
+[Unit]
+Description=Charger configuration socket service
+PartOf=cfg-wssvr.socket
+After=cfg-wssvr.socket
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/cfg-wssvr

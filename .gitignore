@@ -1,0 +1,3 @@
+#Output files to ignore
+**build*
+.vscode
